@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Jug Problem</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #e3f2fd;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 50px;
+        }
+        .jug-container {
+            text-align: center;
+        }
+        .jug {
+            width: 120px;
+            height: 200px;
+            border: 5px solid #000;
+            position: relative;
+            background-color: white;
+            overflow: hidden;
+        }
+        .water {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: blue;
+            transition: height 0.5s ease-in-out;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Water Jug Problem</h1>
+
+    <div>
+        <label>Jug A Capacity: </label>
+        <input type="number" id="jugA_capacity" placeholder="Enter capacity">
+        <label>Jug B Capacity: </label>
+        <input type="number" id="jugB_capacity" placeholder="Enter capacity">
+        <label>Goal (A, B): </label>
+        <input type="number" id="goalA" placeholder="Goal for A">
+        <input type="number" id="goalB" placeholder="Goal for B">
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="container">
+        <div class="jug-container">
+            <div class="jug">
+                <div class="water" id="waterA" style="height: 0%;"></div>
+            </div>
+            <p>Jug A: <span id="jugA_text">0</span> / <span id="maxA">?</span> L</p>
+        </div>
+        <div class="jug-container">
+            <div class="jug">
+                <div class="water" id="waterB" style="height: 0%;"></div>
+            </div>
+            <p>Jug B: <span id="jugB_text">0</span> / <span id="maxB">?</span> L</p>
+        </div>
+    </div>
+
+    <button onclick="sendAction('fillA')">Fill Jug A</button>
+    <button onclick="sendAction('fillB')">Fill Jug B</button>
+    <button onclick="sendAction('emptyA')">Empty Jug A</button>
+    <button onclick="sendAction('emptyB')">Empty Jug B</button>
+    <button onclick="sendAction('transferAtoB')">Transfer A → B</button>
+    <button onclick="sendAction('transferBtoA')">Transfer B → A</button>
+
+    <h3 id="goalStatus"></h3>
+
+    <script>
+        let jugA = 0, jugB = 0, jugACapacity = 0, jugBCapacity = 0, goalA = 0, goalB = 0;
+
+        function updateUI() {
+            let jugAPercentage = jugACapacity > 0 ? (jugA / jugACapacity) * 100 : 0;
+            let jugBPercentage = jugBCapacity > 0 ? (jugB / jugBCapacity) * 100 : 0;
+
+            document.getElementById("waterA").style.height = jugAPercentage + "%";
+            document.getElementById("waterB").style.height = jugBPercentage + "%";
+
+            document.getElementById("jugA_text").innerText = jugA;
+            document.getElementById("jugB_text").innerText = jugB;
+
+            if (jugA === goalA && jugB === goalB) {
+                document.getElementById("goalStatus").innerText = "🎉 Goal Achieved!";
+            } else {
+                document.getElementById("goalStatus").innerText = "";
+            }
+        }
+
+        function startGame() {
+            jugACapacity = parseInt(document.getElementById("jugA_capacity").value);
+            jugBCapacity = parseInt(document.getElementById("jugB_capacity").value);
+            goalA = parseInt(document.getElementById("goalA").value);
+            goalB = parseInt(document.getElementById("goalB").value);
+
+            if (isNaN(jugACapacity) || isNaN(jugBCapacity) || isNaN(goalA) || isNaN(goalB)) {
+                alert("Please enter valid numbers for capacities and goals.");
+                return;
+            }
+
+            document.getElementById("maxA").innerText = jugACapacity;
+            document.getElementById("maxB").innerText = jugBCapacity;
+
+            fetch("http://127.0.0.1:5000/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ jugA: jugACapacity, jugB: jugBCapacity, goalA: goalA, goalB: goalB })
+            }).then(res => res.json()).then(() => {
+                jugA = 0;
+                jugB = 0;
+                updateUI();
+            });
+        }
+
+        function sendAction(action) {
+            fetch("http://127.0.0.1:5000/action", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: action })
+            }).then(res => res.json()).then(data => {
+                jugA = data.jugA;
+                jugB = data.jugB;
+                updateUI();
+            });
+        }
+    </script>
+
+</body>
+</html>
